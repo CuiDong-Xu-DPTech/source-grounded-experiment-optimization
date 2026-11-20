@@ -1,0 +1,13 @@
+SYNTHETIC_INTERFACE_DEMO / EXAMPLE-ONLY
+This material is entirely fictional and is intended only to demonstrate interface handling.
+Every amount is a planning price in USD; every slot is an unbooked planning scenario, not a quote, purchase, booking or equipment confirmation.
+Response Y is measured in percent only after a real run; no experiment has occurred and no Y value may be inferred.
+C0: choose one duration from the selected plan version's finite allowed_minutes list; do not interpolate.
+C1: each candidate's planning price must be less than or equal to 5 USD per run.
+C2: two 30-minute planning slots would be needed, but neither slot has been reserved or confirmed.
+Common finite choices for this illustration are 10, 20 and 30 minutes.
+PLAN-A | version=1.0 | allowed_minutes=[10,20] | planning_price=4 USD/run | material=neutral-cartridge-A | availability=unverified
+PLAN-B | version=1.1 | allowed_minutes=[20,30] | planning_price=6 USD/run | material=neutral-cartridge-B | availability=unverified
+PLAN-C | version=2.0 | allowed_minutes=[10,30] | planning_price=5 USD/run | material=neutral-cartridge-C | compatibility_record=missing
+Deliberate conflict: PLAN-B version 1.1 violates C1 at 6 USD per planning run; do not silently change the cap or price.
+End of synthetic material. These lines support only the EXAMPLE-ONLY interface statements, not scientific efficacy or safety.

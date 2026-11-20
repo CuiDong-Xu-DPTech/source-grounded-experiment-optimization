@@ -1,0 +1,564 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/optimization_request.schema.json",
+  "title": "Source-constrained finite parameter optimization request",
+  "description": "Canonical request for scripts/optimize.py. JSON Schema checks structure; the CLI additionally checks reference integrity, typed IDs, exact domain membership, units, derived DAGs, duplicate logical IDs, and non-empty grids. All numeric literals must be finite JSON numbers, not numeric strings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "evidence",
+    "parameters",
+    "plans",
+    "input_values",
+    "derived_values",
+    "objectives",
+    "constraints",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "case_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Map from evidence ID to source record. Every evidence_refs item anywhere in the request must be a property name in this map; the CLI enforces this cross-reference rule.",
+      "additionalProperties": {
+        "$ref": "#/$defs/evidenceRecord"
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/parameter"
+      }
+    },
+    "plans": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/plan"
+      }
+    },
+    "input_values": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/inputValue"
+      }
+    },
+    "derived_values": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/calculation"
+      }
+    },
+    "objectives": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/calculation"
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/constraint"
+      }
+    },
+    "decision": {
+      "$ref": "#/$defs/decision"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scalar": {
+      "type": ["number", "string", "boolean"]
+    },
+    "valueType": {
+      "enum": ["number", "integer", "string", "boolean"]
+    },
+    "unit": {
+      "type": "string",
+      "description": "Normalized case-sensitive unit expression; empty or omitted means dimensionless where optional. The CLI parses atoms, *, /, parentheses, and integer powers. No unit conversion is performed."
+    },
+    "evidenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locator", "quote", "type"],
+      "properties": {
+        "locator": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Stable source locator, such as a document identifier plus page/section; it need not be a local file."
+        },
+        "quote": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Source excerpt supporting the normalized statement."
+        },
+        "type": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Caller-defined source kind, for example paper, equipment_contract, or price_contract."
+        }
+      }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "description": "References IDs in the top-level evidence map. Empty arrays are allowed structurally; semantic source-completeness requirements belong to the caller. Missing IDs and duplicates are request errors."
+    },
+    "allowedValuesDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_values"],
+      "properties": {
+        "allowed_values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/scalar"
+          }
+        }
+      }
+    },
+    "gridDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper", "step", "inclusivity"],
+      "properties": {
+        "lower": {
+          "type": "number"
+        },
+        "upper": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inclusivity": {
+          "enum": ["closed", "open", "left_closed", "right_closed"]
+        }
+      },
+      "description": "Exact grid lower + k*step. left_closed includes lower and excludes upper; right_closed excludes lower and includes upper. Integer domains require integral endpoints and step."
+    },
+    "domain": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/allowedValuesDomain"
+        },
+        {
+          "$ref": "#/$defs/gridDomain"
+        }
+      ]
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "domain", "evidence_refs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "$ref": "#/$defs/valueType"
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "domain": {
+          "$ref": "#/$defs/domain"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidenceRefs"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_id", "version", "evidence_refs"],
+      "properties": {
+        "plan_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidenceRefs"
+        },
+        "assignments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/scalar"
+          },
+          "description": "Optional fixed parameter values. Each name must be a parameter ID and each value must belong to its effective plan domain."
+        },
+        "domain_overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/domain"
+          },
+          "description": "Optional plan-specific domains, applied before validating fixed assignments. Unfixed parameters are exhaustively enumerated."
+        }
+      }
+    },
+    "inputValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "type", "nature", "unit", "evidence_refs"],
+      "properties": {
+        "status": {
+          "enum": ["known", "unknown"]
+        },
+        "type": {
+          "$ref": "#/$defs/valueType"
+        },
+        "nature": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Caller-defined provenance/nature label, such as measured, contract, or missing_response."
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidenceRefs"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "known"
+              }
+            }
+          },
+          "then": {
+            "required": ["value"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": ["value"]
+            }
+          }
+        }
+      ]
+    },
+    "calculation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expression", "evidence_refs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "expression": {
+          "$ref": "#/$defs/expression"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidenceRefs"
+        }
+      }
+    },
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expression", "evidence_refs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expression": {
+          "$ref": "#/$defs/expression",
+          "description": "Must statically evaluate to boolean. The CLI records pass, fail, or unknown per candidate."
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidenceRefs"
+        }
+      }
+    },
+    "refExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Parameter, input_value, or derived_value ID edited by the caller. Derived expressions cannot reference objectives; objectives and constraints cannot reference objectives either."
+        }
+      }
+    },
+    "constExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["const"],
+      "properties": {
+        "const": {
+          "$ref": "#/$defs/scalar"
+        },
+        "unit": {
+          "$ref": "#/$defs/unit",
+          "description": "Optional explicit unit for a numeric constant; non-numeric constants must be dimensionless."
+        }
+      }
+    },
+    "inDomainExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "value", "domain"],
+      "properties": {
+        "op": {
+          "const": "in_domain"
+        },
+        "value": {
+          "$ref": "#/$defs/expression"
+        },
+        "domain": {
+          "$ref": "#/$defs/domain"
+        }
+      }
+    },
+    "operatorExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "args"],
+      "properties": {
+        "op": {
+          "enum": [
+            "add",
+            "sub",
+            "mul",
+            "div",
+            "min",
+            "max",
+            "floor",
+            "ceil",
+            "ceil_div",
+            "ceil_to_step",
+            "eq",
+            "ne",
+            "lt",
+            "le",
+            "gt",
+            "ge",
+            "all",
+            "any",
+            "not",
+            "implies"
+          ]
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/expression"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": ["add", "mul", "min", "max"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": ["sub", "div", "ceil_div", "eq", "ne", "lt", "le", "gt", "ge", "implies"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": ["floor", "ceil", "not"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "minItems": 1,
+                "maxItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "ceil_to_step"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "minItems": 2,
+                "maxItems": 3
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "enum": ["all", "any"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expression": {
+      "description": "Whitelist-only expression AST. No source strings are executed. add/mul/min/max take 2+ args; sub/div/ceil_div/comparisons/implies take 2; floor/ceil/not take 1; ceil_to_step takes value, positive step, and optional origin; all/any take 1+ boolean args.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/refExpression"
+        },
+        {
+          "$ref": "#/$defs/constExpression"
+        },
+        {
+          "$ref": "#/$defs/inDomainExpression"
+        },
+        {
+          "$ref": "#/$defs/operatorExpression"
+        }
+      ]
+    },
+    "objectiveDirection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "direction"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "direction": {
+          "enum": ["minimize", "maximize"]
+        }
+      }
+    },
+    "decision": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "const": "feasibility"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "objective_id", "direction"],
+          "properties": {
+            "type": {
+              "const": "single"
+            },
+            "objective_id": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "direction": {
+              "enum": ["minimize", "maximize"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "objectives"],
+          "properties": {
+            "type": {
+              "const": "lexicographic"
+            },
+            "objectives": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/objectiveDirection"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "objectives"],
+          "properties": {
+            "type": {
+              "const": "pareto"
+            },
+            "objectives": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/objectiveDirection"
+              }
+            }
+          }
+        }
+      ],
+      "description": "The caller must supply every direction. No equal weighting, scalarization, or default direction is supplied by schema or code."
+    }
+  }
+}

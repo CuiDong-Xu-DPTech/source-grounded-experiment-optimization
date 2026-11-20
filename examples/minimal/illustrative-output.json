@@ -1,0 +1,65 @@
+{
+  "example_label": "SYNTHETIC_INTERFACE_DEMO / EXAMPLE-ONLY",
+  "case_id": "SYNTHETIC_INTERFACE_DEMO-001",
+  "status": "partial",
+  "main_result": {
+    "demo_notice": "SYNTHETIC_INTERFACE_DEMO / EXAMPLE-ONLY: handwritten interface illustration, not an actual run, quote, booking, measurement or formal answer.",
+    "execution_status": "untested",
+    "candidate_plans": [
+      {
+        "plan_id": "PLAN-A",
+        "version": "1.0",
+        "example_choice_minutes": 10,
+        "planning_price_usd_per_run": 4
+      },
+      {
+        "plan_id": "PLAN-B",
+        "version": "1.1",
+        "example_choice_minutes": 20,
+        "planning_price_usd_per_run": 6
+      },
+      {
+        "plan_id": "PLAN-C",
+        "version": "2.0",
+        "example_choice_minutes": 30,
+        "planning_price_usd_per_run": 5
+      }
+    ],
+    "conflict_demo": {
+      "source_ref": "src-c1-planb",
+      "detail": "EXAMPLE-ONLY: PLAN-B 1.1 costs 6 planning USD/run and conflicts with the 5 USD/run C1 cap at material.txt L6 and L10."
+    },
+    "selection_detail": "No candidate is selected: every plan is untested, Y is unmeasured, C2 is unbooked, PLAN-C 2.0 lacks a compatibility record, and the planning prices are not vendor quotes."
+  },
+  "sources": [
+    {
+      "source_id": "src-plans",
+      "locator": "/skills/weekly-skill/examples/minimal/material.txt#L9-L11",
+      "note": "EXAMPLE-ONLY locator for the three synthetic versioned plans, their finite choices and planning prices."
+    },
+    {
+      "source_id": "src-c1-planb",
+      "locator": "/skills/weekly-skill/examples/minimal/material.txt#L6-L12",
+      "note": "EXAMPLE-ONLY locator for the C1 cap and the deliberate PLAN-B conflict; it is not scientific evidence."
+    }
+  ],
+  "uncertainty": [
+    {
+      "detail": "EXAMPLE-ONLY: synthetic response Y in percent is unmeasured; no value is estimated, and material compatibility and availability remain unresolved.",
+      "blocking_complete": true
+    }
+  ],
+  "limitations": [
+    {
+      "detail": "EXAMPLE-ONLY: no real experiment, optimizer request, official case, vendor quote, booking, safety approval or DeepSeek Harness run is represented."
+    }
+  ],
+  "change_records": [
+    {
+      "operation": "illustrate-partial",
+      "path": "/main_result",
+      "reason": "EXAMPLE-ONLY: record one intentional planning-price conflict and unresolved synthetic material without claiming execution."
+    }
+  ],
+  "run_record_ref": null
+}
